@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Literacy — Unlimited Practice</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #f5f5f0;
+    color: #1a1a1a;
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 40px 16px;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 680px;
+  }
+
+  .header {
+    text-align: center;
+    margin-bottom: 24px;
+  }
+
+  .header h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 6px;
+  }
+
+  .header p {
+    font-size: 0.9rem;
+    color: #666;
+  }
+
+  /* Stats bar */
+  .stats-bar {
+    display: none;
+    background: #1a1a1a;
+    color: #fff;
+    border-radius: 10px;
+    padding: 14px 20px;
+    margin-bottom: 20px;
+    gap: 0;
+  }
+
+  .stats-bar.show { display: flex; }
+
+  .stat-item {
+    flex: 1;
+    text-align: center;
+  }
+
+  .stat-item + .stat-item {
+    border-left: 1px solid rgba(255,255,255,0.15);
+  }
+
+  .stat-value {
+    font-size: 1.4rem;
+    font-weight: 700;
+    line-height: 1.1;
+  }
+
+  .stat-label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    opacity: 0.6;
+    margin-top: 2px;
+  }
+
+  /* Round badge */
+  .round-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    background: #f3e8ff;
+    color: #6b21a8;
+  }
+
+  /* Progress */
+  .progress-wrap {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .progress-bar {
+    flex: 1;
+    height: 4px;
+    background: #ddd;
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: #1a1a1a;
+    border-radius: 2px;
+    transition: width 0.4s ease;
+  }
+
+  .progress-label {
+    font-size: 0.8rem;
+    color: #888;
+    white-space: nowrap;
+    min-width: 60px;
+    text-align: right;
+  }
+
+  /* Card */
+  .card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 32px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+
+  .question-text {
+    font-size: 1.1rem;
+    font-weight: 600;
+    line-height: 1.5;
+    margin-bottom: 24px;
+  }
+
+  /* Choices */
+  .choices {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .choice-btn {
+    width: 100%;
+    text-align: left;
+    padding: 14px 18px;
+    border: 2px solid #e5e5e5;
+    border-radius: 8px;
+    background: #fff;
+    font-size: 0.95rem;
+    font-family: inherit;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    line-height: 1.4;
+  }
+
+  .choice-btn:hover:not(:disabled) {
+    border-color: #aaa;
+    background: #fafafa;
+  }
+
+  .choice-btn.correct {
+    border-color: #22c55e;
+    background: #f0fdf4;
+    color: #166534;
+  }
+
+  .choice-btn.wrong {
+    border-color: #ef4444;
+    background: #fef2f2;
+    color: #991b1b;
+  }
+
+  .choice-btn.unselected-after { opacity: 0.45; }
+  .choice-btn:disabled { cursor: default; }
+
+  /* Feedback */
+  .feedback {
+    margin-top: 20px;
+    padding: 16px 18px;
+    background: #f9f9f7;
+    border-left: 3px solid #1a1a1a;
+    border-radius: 0 6px 6px 0;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: #333;
+    display: none;
+  }
+
+  .feedback.show { display: block; }
+
+  .feedback-label {
+    font-weight: 700;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 6px;
+  }
+
+  .feedback-label.correct-label { color: #16a34a; }
+  .feedback-label.wrong-label { color: #dc2626; }
+
+  /* Next button */
+  .next-wrap {
+    margin-top: 24px;
+    display: none;
+    justify-content: flex-end;
+  }
+
+  .next-wrap.show { display: flex; }
+
+  .next-btn {
+    padding: 12px 28px;
+    background: #1a1a1a;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-family: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .next-btn:hover { background: #333; }
+
+  /* Round end screen */
+  .round-end {
+    text-align: center;
+  }
+
+  .round-score-circle {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: #1a1a1a;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+  }
+
+  .round-score-num {
+    font-size: 1.8rem;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .round-score-denom {
+    font-size: 0.8rem;
+    opacity: 0.7;
+  }
+
+  .round-label {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  .round-sublabel {
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 24px;
+  }
+
+  .session-summary {
+    background: #f9f9f7;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 24px;
+    text-align: left;
+  }
+
+  .session-summary h4 {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #888;
+    margin-bottom: 12px;
+  }
+
+  .summary-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9rem;
+    padding: 4px 0;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  .summary-row:last-child { border-bottom: none; }
+
+  .summary-row .val { font-weight: 600; }
+
+  .round-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .action-btn {
+    width: 100%;
+    max-width: 320px;
+    padding: 13px 28px;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-family: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+
+  .action-btn.primary {
+    background: #1a1a1a;
+    color: #fff;
+    border: none;
+  }
+
+  .action-btn.primary:hover { background: #333; }
+
+  .action-btn.secondary {
+    background: transparent;
+    color: #1a1a1a;
+    border: 2px solid #1a1a1a;
+  }
+
+  .action-btn.secondary:hover {
+    background: #1a1a1a;
+    color: #fff;
+  }
+
+  /* Session end / final screen */
+  .final-screen { text-align: center; }
+
+  .final-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+
+  .final-sub {
+    font-size: 0.95rem;
+    color: #666;
+    margin-bottom: 24px;
+  }
+
+  .alltime-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .alltime-card {
+    background: #f9f9f7;
+    border-radius: 8px;
+    padding: 16px;
+    text-align: center;
+  }
+
+  .alltime-val {
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin-bottom: 2px;
+  }
+
+  .alltime-lbl {
+    font-size: 0.78rem;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  /* Start screen */
+  .start-screen {
+    text-align: center;
+    padding: 16px 0;
+  }
+
+  .start-screen p {
+    color: #555;
+    line-height: 1.6;
+    margin-bottom: 24px;
+    font-size: 0.95rem;
+  }
+
+  .alltime-preview {
+    background: #f9f9f7;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 28px;
+    display: none;
+  }
+
+  .alltime-preview.show { display: block; }
+
+  .alltime-preview h4 {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #888;
+    margin-bottom: 10px;
+  }
+
+  .start-btn {
+    padding: 14px 36px;
+    background: #1a1a1a;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-family: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .start-btn:hover { background: #333; }
+  .start-btn:disabled { background: #999; cursor: default; }
+
+  .loading-msg {
+    font-size: 0.9rem;
+    color: #888;
+    margin-bottom: 16px;
+    min-height: 1.4em;
+  }
+
+  .error-msg {
+    color: #dc2626;
+    font-size: 0.9rem;
+    margin-bottom: 16px;
+    display: none;
+  }
+
+  .reset-link {
+    margin-top: 16px;
+    font-size: 0.8rem;
+    color: #aaa;
+    cursor: pointer;
+    text-decoration: underline;
+  }
+
+  .reset-link:hover { color: #666; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <h1>AI Literacy — Unlimited Practice</h1>
+    <p id="headerSub">5 questions at a time &middot; Track your progress</p>
+  </div>
+
+  <!-- Running session stats bar -->
+  <div class="stats-bar" id="statsBar">
+    <div class="stat-item">
+      <div class="stat-value" id="statAnswered">0</div>
+      <div class="stat-label">Answered</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-value" id="statPct">—</div>
+      <div class="stat-label">Correct</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-value" id="statAvgTime">—</div>
+      <div class="stat-label">Avg Sec/Q</div>
+    </div>
+  </div>
+
+  <!-- Start screen -->
+  <div id="startScreen" class="card">
+    <div class="start-screen">
+      <p>Work through the full question bank 5 at a time. Your score percentage and average response time are tracked across sessions in this browser.</p>
+
+      <div class="alltime-preview" id="alltimePreview">
+        <h4>Your all-time stats</h4>
+        <div class="summary-row">
+          <span>Questions answered</span>
+          <span class="val" id="prevTotal">—</span>
+        </div>
+        <div class="summary-row">
+          <span>Overall correct</span>
+          <span class="val" id="prevPct">—</span>
+        </div>
+        <div class="summary-row">
+          <span>Avg time per question</span>
+          <span class="val" id="prevAvg">—</span>
+        </div>
+      </div>
+
+      <div class="loading-msg" id="loadingMsg">Loading questions...</div>
+      <div class="error-msg" id="errorMsg"></div>
+      <button class="start-btn" id="startBtn" onclick="beginSession()" disabled>Start Practice</button>
+      <div class="reset-link" id="resetLink" onclick="resetStats()" style="display:none;">Reset all-time stats</div>
+    </div>
+  </div>
+
+  <!-- Quiz area -->
+  <div id="quizArea" style="display:none;">
+    <div class="progress-wrap">
+      <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="progress-label" id="progressLabel">1 of 5</div>
+    </div>
+
+    <div class="card">
+      <div class="round-badge" id="roundBadge">Round 1</div>
+      <div class="question-text" id="questionText"></div>
+      <div class="choices" id="choicesArea"></div>
+      <div class="feedback" id="feedbackBox">
+        <div class="feedback-label" id="feedbackLabel"></div>
+        <div id="feedbackText"></div>
+      </div>
+      <div class="next-wrap" id="nextWrap">
+        <button class="next-btn" id="nextBtn" onclick="nextQuestion()">Next &rarr;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Round end screen -->
+  <div id="roundEndArea" style="display:none;">
+    <div class="card round-end">
+      <div class="round-score-circle">
+        <div class="round-score-num" id="roundScoreNum"></div>
+        <div class="round-score-denom">of 5</div>
+      </div>
+      <div class="round-label" id="roundLabel"></div>
+      <div class="round-sublabel" id="roundSublabel"></div>
+
+      <div class="session-summary">
+        <h4>This session</h4>
+        <div class="summary-row">
+          <span>Questions answered</span>
+          <span class="val" id="sessTotal"></span>
+        </div>
+        <div class="summary-row">
+          <span>Correct</span>
+          <span class="val" id="sessPct"></span>
+        </div>
+        <div class="summary-row">
+          <span>Avg time per question</span>
+          <span class="val" id="sessAvg"></span>
+        </div>
+      </div>
+
+      <div class="round-actions">
+        <button class="action-btn primary" onclick="nextRound()">Keep Going &rarr;</button>
+        <button class="action-btn secondary" onclick="endSession()">Finish Session</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Final session summary -->
+  <div id="finalArea" style="display:none;">
+    <div class="card final-screen">
+      <div class="final-title">Session Complete</div>
+      <div class="final-sub" id="finalSub"></div>
+
+      <div class="alltime-grid">
+        <div class="alltime-card">
+          <div class="alltime-val" id="finalTotalQ"></div>
+          <div class="alltime-lbl">All-time questions</div>
+        </div>
+        <div class="alltime-card">
+          <div class="alltime-val" id="finalAllPct"></div>
+          <div class="alltime-lbl">All-time correct</div>
+        </div>
+        <div class="alltime-card">
+          <div class="alltime-val" id="finalAvgTime"></div>
+          <div class="alltime-lbl">All-time avg sec/Q</div>
+        </div>
+        <div class="alltime-card">
+          <div class="alltime-val" id="finalSessions"></div>
+          <div class="alltime-lbl">Sessions completed</div>
+        </div>
+      </div>
+
+      <div class="round-actions">
+        <button class="action-btn primary" onclick="beginSession()">Start Another Session</button>
+        <button class="action-btn secondary" onclick="goToStart()">Back to Start</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── CONFIGURATION ──────────────────────────────────────────────────────────
+const SCRIPT_URL   = 'https://script.google.com/macros/s/AKfycbyFBrayBqXyBwy-k3bZuFIRtCqhcgEPwTmBn5fjvSL_DH50Q6T0633Zrqns3yCnPdctSg/exec';
+const ROUND_SIZE   = 5;
+const STATS_KEY    = 'aiQuizStats';
+
+// ── PERSISTENT STATS (localStorage) ───────────────────────────────────────
+function loadStats() {
+  try {
+    return JSON.parse(localStorage.getItem(STATS_KEY)) || { total: 0, correct: 0, timeMs: 0, sessions: 0 };
+  } catch(e) {
+    return { total: 0, correct: 0, timeMs: 0, sessions: 0 };
+  }
+}
+
+function saveStats(s) {
+  localStorage.setItem(STATS_KEY, JSON.stringify(s));
+}
+
+function resetStats() {
+  if (!confirm('Reset all saved stats? This cannot be undone.')) return;
+  localStorage.removeItem(STATS_KEY);
+  location.reload();
+}
+
+function fmtPct(correct, total) {
+  if (!total) return '—';
+  return Math.round((correct / total) * 100) + '%';
+}
+
+function fmtTime(ms, count) {
+  if (!count) return '—';
+  return (ms / count / 1000).toFixed(1) + 's';
+}
+
+// ── STATE ──────────────────────────────────────────────────────────────────
+let QUESTION_BANK    = [];
+let sessionPool      = [];   // shuffled bank for this session, consumed round by round
+let roundQuestions   = [];   // current 5 questions
+let current          = 0;
+let roundAnswers     = [];
+let questionStart    = null;
+let roundNum         = 0;
+
+// Session accumulators
+let sessTotal        = 0;
+let sessCorrect      = 0;
+let sessTimeMs       = 0;
+
+// ── LOAD QUESTIONS ─────────────────────────────────────────────────────────
+(function loadQuestions() {
+  const loadingEl = document.getElementById('loadingMsg');
+  const errorEl   = document.getElementById('errorMsg');
+  const startBtn  = document.getElementById('startBtn');
+
+  // Show prior stats if available
+  const prior = loadStats();
+  if (prior.total > 0) {
+    document.getElementById('alltimePreview').className = 'alltime-preview show';
+    document.getElementById('prevTotal').textContent = prior.total;
+    document.getElementById('prevPct').textContent   = fmtPct(prior.correct, prior.total);
+    document.getElementById('prevAvg').textContent   = fmtTime(prior.timeMs, prior.total);
+    document.getElementById('resetLink').style.display = 'block';
+  }
+
+  fetch(SCRIPT_URL + '?action=getQuestions')
+    .then(r => r.json())
+    .then(data => {
+      if (data.success && data.questions && data.questions.length >= ROUND_SIZE) {
+        QUESTION_BANK = data.questions;
+        loadingEl.textContent = QUESTION_BANK.length + ' questions loaded.';
+        startBtn.disabled = false;
+      } else {
+        throw new Error(data.error || 'No questions available.');
+      }
+    })
+    .catch(err => {
+      loadingEl.textContent = '';
+      errorEl.style.display = 'block';
+      errorEl.textContent = 'Could not load questions: ' + err.message;
+    });
+})();
+
+// ── SESSION CONTROL ────────────────────────────────────────────────────────
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function beginSession() {
+  sessionPool  = shuffle(QUESTION_BANK);
+  sessTotal    = 0;
+  sessCorrect  = 0;
+  sessTimeMs   = 0;
+  roundNum     = 0;
+
+  hide('startScreen');
+  hide('finalArea');
+  show('statsBar');
+  updateStatsBar();
+  startRound();
+}
+
+function startRound() {
+  roundNum++;
+  // Take next ROUND_SIZE from pool; refill if exhausted
+  if (sessionPool.length < ROUND_SIZE) {
+    sessionPool = shuffle(QUESTION_BANK);
+  }
+  roundQuestions = sessionPool.splice(0, ROUND_SIZE);
+  current      = 0;
+  roundAnswers = [];
+
+  document.getElementById('roundBadge').textContent = 'Round ' + roundNum;
+  hide('roundEndArea');
+  show('quizArea');
+  renderQuestion();
+}
+
+function nextRound() {
+  startRound();
+}
+
+function endSession() {
+  hide('roundEndArea');
+  showFinal();
+}
+
+function goToStart() {
+  hide('finalArea');
+  hide('statsBar');
+  show('startScreen');
+}
+
+// ── QUIZ RENDER ────────────────────────────────────────────────────────────
+function renderQuestion() {
+  const q   = roundQuestions[current];
+  const pct = (current / ROUND_SIZE) * 100;
+
+  document.getElementById('progressFill').style.width  = pct + '%';
+  document.getElementById('progressLabel').textContent = (current + 1) + ' of ' + ROUND_SIZE;
+  document.getElementById('questionText').textContent  = q.q;
+
+  const choicesArea = document.getElementById('choicesArea');
+  choicesArea.innerHTML = '';
+  q.opts.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn';
+    btn.textContent = opt;
+    btn.onclick = () => selectAnswer(i);
+    choicesArea.appendChild(btn);
+  });
+
+  document.getElementById('feedbackBox').className = 'feedback';
+  document.getElementById('nextWrap').className    = 'next-wrap';
+  document.getElementById('nextBtn').textContent   = current < ROUND_SIZE - 1 ? 'Next →' : 'See Round Results';
+
+  questionStart = Date.now();
+}
+
+function selectAnswer(selected) {
+  const elapsed   = Date.now() - questionStart;
+  const q         = roundQuestions[current];
+  const isCorrect = selected === q.correct;
+
+  const btns = document.querySelectorAll('.choice-btn');
+  btns.forEach((btn, i) => {
+    btn.disabled = true;
+    if (i === q.correct)                    btn.className = 'choice-btn correct';
+    else if (i === selected && !isCorrect)  btn.className = 'choice-btn wrong';
+    else                                    btn.className = 'choice-btn unselected-after';
+  });
+
+  const lbl = document.getElementById('feedbackLabel');
+  const txt = document.getElementById('feedbackText');
+  lbl.textContent  = isCorrect ? 'Correct' : 'Incorrect';
+  lbl.className    = 'feedback-label ' + (isCorrect ? 'correct-label' : 'wrong-label');
+  txt.textContent  = q.why;
+  document.getElementById('feedbackBox').className = 'feedback show';
+  document.getElementById('nextWrap').className    = 'next-wrap show';
+
+  roundAnswers.push({ correct: isCorrect, timeMs: elapsed });
+}
+
+function nextQuestion() {
+  current++;
+  if (current >= ROUND_SIZE) {
+    showRoundEnd();
+  } else {
+    renderQuestion();
+  }
+}
+
+// ── ROUND END ──────────────────────────────────────────────────────────────
+function showRoundEnd() {
+  hide('quizArea');
+
+  const roundCorrect = roundAnswers.filter(a => a.correct).length;
+  const roundTimeMs  = roundAnswers.reduce((s, a) => s + a.timeMs, 0);
+
+  // Accumulate into session
+  sessTotal   += ROUND_SIZE;
+  sessCorrect += roundCorrect;
+  sessTimeMs  += roundTimeMs;
+
+  // Update stats bar
+  updateStatsBar();
+
+  // Update persistent stats
+  const prior = loadStats();
+  prior.total   += ROUND_SIZE;
+  prior.correct += roundCorrect;
+  prior.timeMs  += roundTimeMs;
+  saveStats(prior);
+
+  // Round summary labels
+  const pct = Math.round((roundCorrect / ROUND_SIZE) * 100);
+  document.getElementById('roundScoreNum').textContent = roundCorrect;
+  document.getElementById('roundLabel').textContent    =
+    pct === 100 ? 'Perfect round!' : pct >= 80 ? 'Strong round' : pct >= 60 ? 'Decent round' : 'Tough round';
+  document.getElementById('roundSublabel').textContent =
+    roundCorrect + ' of 5 correct · avg ' + (roundTimeMs / ROUND_SIZE / 1000).toFixed(1) + 's per question';
+
+  // Session running totals
+  document.getElementById('sessTotal').textContent = sessTotal;
+  document.getElementById('sessPct').textContent   = fmtPct(sessCorrect, sessTotal);
+  document.getElementById('sessAvg').textContent   = fmtTime(sessTimeMs, sessTotal);
+
+  show('roundEndArea');
+}
+
+function updateStatsBar() {
+  document.getElementById('statAnswered').textContent = sessTotal;
+  document.getElementById('statPct').textContent      = fmtPct(sessCorrect, sessTotal);
+  document.getElementById('statAvgTime').textContent  = fmtTime(sessTimeMs, sessTotal);
+}
+
+// ── FINAL SCREEN ───────────────────────────────────────────────────────────
+function showFinal() {
+  const prior = loadStats();
+  // Increment session count
+  prior.sessions = (prior.sessions || 0) + 1;
+  saveStats(prior);
+
+  document.getElementById('finalSub').textContent =
+    'You answered ' + sessTotal + ' questions this session — ' + sessCorrect + ' correct.';
+
+  document.getElementById('finalTotalQ').textContent  = prior.total;
+  document.getElementById('finalAllPct').textContent  = fmtPct(prior.correct, prior.total);
+  document.getElementById('finalAvgTime').textContent = fmtTime(prior.timeMs, prior.total);
+  document.getElementById('finalSessions').textContent = prior.sessions;
+
+  show('finalArea');
+}
+
+// ── HELPERS ────────────────────────────────────────────────────────────────
+function show(id) { document.getElementById(id).style.display = ''; }
+function hide(id) { document.getElementById(id).style.display = 'none'; }
+</script>
+</body>
+</html>

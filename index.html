@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Literacy Quiz</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #f5f5f0;
+    color: #1a1a1a;
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 40px 16px;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 680px;
+  }
+
+  .header {
+    text-align: center;
+    margin-bottom: 36px;
+  }
+
+  .header h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 6px;
+  }
+
+  .header p {
+    font-size: 0.9rem;
+    color: #666;
+  }
+
+  /* Level badge */
+  .level-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .level-badge.level-1 { background: #e8f4fd; color: #1d6fa4; }
+  .level-badge.level-2 { background: #fef3c7; color: #92400e; }
+
+  /* Progress */
+  .progress-wrap {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .progress-bar {
+    flex: 1;
+    height: 4px;
+    background: #ddd;
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: #1a1a1a;
+    border-radius: 2px;
+    transition: width 0.4s ease;
+  }
+
+  .progress-label {
+    font-size: 0.8rem;
+    color: #888;
+    white-space: nowrap;
+    min-width: 60px;
+    text-align: right;
+  }
+
+  /* Card */
+  .card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 32px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+
+  .question-text {
+    font-size: 1.1rem;
+    font-weight: 600;
+    line-height: 1.5;
+    margin-bottom: 24px;
+  }
+
+  /* Choices */
+  .choices {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .choice-btn {
+    width: 100%;
+    text-align: left;
+    padding: 14px 18px;
+    border: 2px solid #e5e5e5;
+    border-radius: 8px;
+    background: #fff;
+    font-size: 0.95rem;
+    font-family: inherit;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    line-height: 1.4;
+  }
+
+  .choice-btn:hover:not(:disabled) {
+    border-color: #aaa;
+    background: #fafafa;
+  }
+
+  .choice-btn.correct {
+    border-color: #22c55e;
+    background: #f0fdf4;
+    color: #166534;
+  }
+
+  .choice-btn.wrong {
+    border-color: #ef4444;
+    background: #fef2f2;
+    color: #991b1b;
+  }
+
+  .choice-btn.unselected-after {
+    opacity: 0.45;
+  }
+
+  .choice-btn:disabled {
+    cursor: default;
+  }
+
+  /* Feedback */
+  .feedback {
+    margin-top: 20px;
+    padding: 16px 18px;
+    background: #f9f9f7;
+    border-left: 3px solid #1a1a1a;
+    border-radius: 0 6px 6px 0;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: #333;
+    display: none;
+  }
+
+  .feedback.show { display: block; }
+
+  .feedback-label {
+    font-weight: 700;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 6px;
+  }
+
+  .feedback-label.correct-label { color: #16a34a; }
+  .feedback-label.wrong-label { color: #dc2626; }
+
+  /* Next button */
+  .next-wrap {
+    margin-top: 24px;
+    display: none;
+    justify-content: flex-end;
+  }
+
+  .next-wrap.show { display: flex; }
+
+  .next-btn {
+    padding: 12px 28px;
+    background: #1a1a1a;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-family: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .next-btn:hover { background: #333; }
+
+  /* Results */
+  .results {
+    display: none;
+    text-align: center;
+  }
+
+  .results.show { display: block; }
+
+  .score-circle {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: #1a1a1a;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+  }
+
+  .score-number {
+    font-size: 2.2rem;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .score-denom {
+    font-size: 0.85rem;
+    opacity: 0.7;
+  }
+
+  .grade {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+
+  .grade-label {
+    font-size: 1rem;
+    color: #666;
+    margin-bottom: 12px;
+  }
+
+  /* Advance / gate banner */
+  .advance-banner {
+    margin: 20px 0;
+    padding: 16px 20px;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    text-align: left;
+  }
+
+  .advance-banner.pass {
+    background: #f0fdf4;
+    border: 1.5px solid #86efac;
+    color: #166534;
+  }
+
+  .advance-banner.fail {
+    background: #fef2f2;
+    border: 1.5px solid #fca5a5;
+    color: #991b1b;
+  }
+
+  .advance-banner.upgrade {
+    background: #fffbeb;
+    border: 1.5px solid #fbbf24;
+    color: #78350f;
+  }
+
+  .action-btn.upgrade {
+    background: #f59e0b;
+    color: #fff;
+    border: none;
+  }
+
+  .action-btn.upgrade:hover { background: #d97706; }
+
+  .advance-banner strong { display: block; margin-bottom: 4px; }
+
+  .results-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
+    margin-top: 24px;
+  }
+
+  .action-btn {
+    width: 100%;
+    max-width: 320px;
+    padding: 13px 28px;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-family: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+
+  .action-btn.primary {
+    background: #1a1a1a;
+    color: #fff;
+    border: none;
+  }
+
+  .action-btn.primary:hover { background: #333; }
+
+  .action-btn.secondary {
+    background: transparent;
+    color: #1a1a1a;
+    border: 2px solid #1a1a1a;
+  }
+
+  .action-btn.secondary:hover {
+    background: #1a1a1a;
+    color: #fff;
+  }
+
+  .answer-review {
+    text-align: left;
+    margin-top: 28px;
+    border-top: 1px solid #eee;
+    padding-top: 24px;
+  }
+
+  .answer-review h3 {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #888;
+    margin-bottom: 16px;
+  }
+
+  .review-item {
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  .review-item:last-child { border-bottom: none; }
+
+  .review-q {
+    font-size: 0.88rem;
+    font-weight: 600;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .review-icon { flex-shrink: 0; }
+
+  .review-answer {
+    font-size: 0.85rem;
+    color: #555;
+    margin-left: 24px;
+    line-height: 1.5;
+  }
+
+  .review-answer .your-answer { color: #dc2626; }
+  .review-answer .right-answer { color: #16a34a; margin-top: 2px; }
+
+  .save-status {
+    margin-top: 16px;
+    font-size: 0.85rem;
+    color: #888;
+  }
+
+  /* Start screen */
+  .start-screen {
+    text-align: center;
+    padding: 16px 0;
+  }
+
+  .start-screen p {
+    color: #555;
+    line-height: 1.6;
+    margin-bottom: 28px;
+    font-size: 0.95rem;
+  }
+
+  .start-btn {
+    padding: 14px 36px;
+    background: #1a1a1a;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-family: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .start-btn:hover { background: #333; }
+  .start-btn:disabled { background: #999; cursor: default; }
+
+  /* Loading state */
+  .loading-msg {
+    font-size: 0.9rem;
+    color: #888;
+    margin-bottom: 16px;
+    min-height: 1.4em;
+  }
+
+  .error-msg {
+    color: #dc2626;
+    font-size: 0.9rem;
+    margin-bottom: 16px;
+    display: none;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>AI Literacy Quiz</h1>
+    <p id="headerSub">5 questions &middot; Score 4/5 to unlock the advanced quiz</p>
+  </div>
+
+  <div id="startScreen" class="card">
+    <div class="start-screen">
+      <p>This quiz covers how AI works, where it fits into everyday decisions, and a few historical moments that explain why human judgment still matters. Questions are drawn from real events and practical situations — no jargon, no trick questions.</p>
+      <div class="loading-msg" id="loadingMsg">Loading questions...</div>
+      <div class="error-msg" id="errorMsg"></div>
+      <button class="start-btn" id="startBtn" onclick="startQuiz()" disabled>Start Quiz</button>
+    </div>
+  </div>
+
+  <div id="quizArea" style="display:none;">
+    <div class="progress-wrap">
+      <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="progress-label" id="progressLabel">1 of 5</div>
+    </div>
+
+    <div class="card">
+      <div class="level-badge level-1" id="levelBadge">Level 1</div>
+      <div class="question-text" id="questionText"></div>
+      <div class="choices" id="choicesArea"></div>
+      <div class="feedback" id="feedbackBox">
+        <div class="feedback-label" id="feedbackLabel"></div>
+        <div id="feedbackText"></div>
+      </div>
+      <div class="next-wrap" id="nextWrap">
+        <button class="next-btn" id="nextBtn" onclick="nextQuestion()">Next &rarr;</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="resultsArea" style="display:none;">
+    <div class="card results show">
+      <div class="score-circle">
+        <div class="score-number" id="scoreNum"></div>
+        <div class="score-denom" id="scoreDenom">out of 5</div>
+      </div>
+      <div class="grade" id="gradeDisplay"></div>
+      <div class="grade-label" id="gradeLabel"></div>
+
+      <div class="advance-banner" id="advanceBanner" style="display:none;"></div>
+
+      <div class="results-actions" id="resultsActions"></div>
+
+      <div class="save-status" id="saveStatus"></div>
+
+      <div class="answer-review" id="answerReview">
+        <h3>Answer Review</h3>
+        <div id="reviewItems"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── CONFIGURATION ──────────────────────────────────────────────────────────
+const SCRIPT_URL  = 'https://script.google.com/macros/s/AKfycbyFBrayBqXyBwy-k3bZuFIRtCqhcgEPwTmBn5fjvSL_DH50Q6T0633Zrqns3yCnPdctSg/exec';
+const BEEHIIV_URL = 'https://thecautionary.beehiiv.com/upgrade';  // ← replace with your Beehiiv paid tier URL
+const LEVEL1_SIZE  = 5;
+const LEVEL2_SIZE  = 10;
+const PASS_SCORE   = 4;   // need 4/5 to advance
+
+// ── STATE ──────────────────────────────────────────────────────────────────
+let QUESTION_BANK = [];
+let questions     = [];
+let current       = 0;
+let answers       = [];
+let startTime     = null;
+let quizLevel     = 1;    // 1 = 5-question, 2 = 10-question
+
+// ── LOAD QUESTIONS ON PAGE LOAD ────────────────────────────────────────────
+(function loadQuestions() {
+  const loadingEl = document.getElementById('loadingMsg');
+  const errorEl   = document.getElementById('errorMsg');
+  const startBtn  = document.getElementById('startBtn');
+
+  fetch(SCRIPT_URL + '?action=getQuestions')
+    .then(r => r.json())
+    .then(data => {
+      if (data.success && data.questions && data.questions.length >= LEVEL2_SIZE) {
+        QUESTION_BANK = data.questions;
+        loadingEl.textContent = QUESTION_BANK.length + ' questions loaded.';
+        startBtn.disabled = false;
+      } else {
+        throw new Error(data.error || 'Questions sheet is empty or not set up yet.');
+      }
+    })
+    .catch(err => {
+      loadingEl.textContent = '';
+      errorEl.style.display = 'block';
+      errorEl.textContent = 'Could not load questions: ' + err.message;
+    });
+})();
+
+// ── QUIZ LOGIC ─────────────────────────────────────────────────────────────
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function startQuiz(level) {
+  quizLevel = level || 1;
+  const size = quizLevel === 1 ? LEVEL1_SIZE : LEVEL2_SIZE;
+
+  questions  = shuffle(QUESTION_BANK).slice(0, size);
+  current    = 0;
+  answers    = [];
+  startTime  = Date.now();
+
+  // Update level badge
+  const badge = document.getElementById('levelBadge');
+  badge.textContent = quizLevel === 1 ? 'Level 1 — 5 Questions' : 'Level 2 — 10 Questions';
+  badge.className = 'level-badge ' + (quizLevel === 1 ? 'level-1' : 'level-2');
+
+  // Update header
+  document.getElementById('headerSub').textContent =
+    quizLevel === 1
+      ? '5 questions · Score 4/5 to unlock the advanced quiz'
+      : '10 questions · Advanced level';
+
+  document.getElementById('startScreen').style.display  = 'none';
+  document.getElementById('resultsArea').style.display  = 'none';
+  document.getElementById('quizArea').style.display     = 'block';
+  renderQuestion();
+}
+
+function renderQuestion() {
+  const q    = questions[current];
+  const size = questions.length;
+  const pct  = (current / size) * 100;
+
+  document.getElementById('progressFill').style.width    = pct + '%';
+  document.getElementById('progressLabel').textContent   = (current + 1) + ' of ' + size;
+  document.getElementById('questionText').textContent    = q.q;
+
+  const choicesArea = document.getElementById('choicesArea');
+  choicesArea.innerHTML = '';
+  q.opts.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn';
+    btn.textContent = opt;
+    btn.onclick = () => selectAnswer(i);
+    choicesArea.appendChild(btn);
+  });
+
+  const fb = document.getElementById('feedbackBox');
+  fb.className = 'feedback';
+  document.getElementById('nextWrap').className = 'next-wrap';
+
+  const nextBtn = document.getElementById('nextBtn');
+  nextBtn.textContent = current < size - 1 ? 'Next →' : 'See Results';
+}
+
+function selectAnswer(selected) {
+  const q         = questions[current];
+  const btns      = document.querySelectorAll('.choice-btn');
+  const isCorrect = selected === q.correct;
+
+  btns.forEach((btn, i) => {
+    btn.disabled = true;
+    if (i === q.correct)                    btn.className = 'choice-btn correct';
+    else if (i === selected && !isCorrect)  btn.className = 'choice-btn wrong';
+    else                                    btn.className = 'choice-btn unselected-after';
+  });
+
+  const fb  = document.getElementById('feedbackBox');
+  const lbl = document.getElementById('feedbackLabel');
+  const txt = document.getElementById('feedbackText');
+  lbl.textContent  = isCorrect ? 'Correct' : 'Incorrect';
+  lbl.className    = 'feedback-label ' + (isCorrect ? 'correct-label' : 'wrong-label');
+  txt.textContent  = q.why;
+  fb.className     = 'feedback show';
+
+  document.getElementById('nextWrap').className = 'next-wrap show';
+
+  answers.push({
+    q:             q.q,
+    selected:      q.opts[selected],
+    correctAnswer: q.opts[q.correct],
+    correct:       isCorrect
+  });
+}
+
+function nextQuestion() {
+  current++;
+  if (current >= questions.length) {
+    showResults();
+  } else {
+    renderQuestion();
+  }
+}
+
+function getGrade(score, total) {
+  const pct = score / total;
+  if (pct === 1)       return { grade: 'A+', label: 'Perfect score' };
+  if (pct >= 0.9)      return { grade: 'A',  label: 'Excellent' };
+  if (pct >= 0.8)      return { grade: 'B+', label: 'Very good' };
+  if (pct >= 0.7)      return { grade: 'B',  label: 'Good' };
+  if (pct >= 0.6)      return { grade: 'C+', label: 'Getting there' };
+  if (pct >= 0.5)      return { grade: 'C',  label: 'Some catching up to do' };
+  if (pct >= 0.4)      return { grade: 'D',  label: 'Time to dig in' };
+  return               { grade: 'F',  label: 'Time to dig in' };
+}
+
+function showResults() {
+  const score   = answers.filter(a => a.correct).length;
+  const total   = answers.length;
+  const elapsed = Math.round((Date.now() - startTime) / 1000);
+  const { grade, label } = getGrade(score, total);
+  const passed  = quizLevel === 1 && score >= PASS_SCORE;
+
+  document.getElementById('quizArea').style.display    = 'none';
+  document.getElementById('resultsArea').style.display = 'block';
+  document.getElementById('scoreNum').textContent      = score;
+  document.getElementById('scoreDenom').textContent    = 'out of ' + total;
+  document.getElementById('gradeDisplay').textContent  = grade;
+  document.getElementById('gradeLabel').textContent    = label;
+
+  // Advance / retry banner (Level 1 only)
+  const banner = document.getElementById('advanceBanner');
+  if (quizLevel === 1) {
+    banner.style.display = 'block';
+    if (passed) {
+      banner.className = 'advance-banner pass';
+      banner.innerHTML = '<strong>You\'re ready for the next level!</strong>You scored ' + score + '/5 — you\'ve unlocked the 10-question quiz.';
+    } else {
+      banner.className = 'advance-banner fail';
+      banner.innerHTML = '<strong>Not quite — need 4/5 to advance.</strong>Review the answers below and give it another try.';
+    }
+  } else {
+    banner.style.display = 'none';
+  }
+
+  // Action buttons
+  const actionsEl = document.getElementById('resultsActions');
+  actionsEl.innerHTML = '';
+
+  if (quizLevel === 1) {
+    if (passed) {
+      actionsEl.innerHTML = `
+        <button class="action-btn primary" onclick="startQuiz(2)">Take the 10-Question Quiz &rarr;</button>
+        <button class="action-btn secondary" onclick="startQuiz(1)">Retake 5-Question Quiz</button>`;
+    } else {
+      actionsEl.innerHTML = `
+        <button class="action-btn primary" onclick="startQuiz(1)">Try Again</button>`;
+    }
+  } else {
+    // Level 2 complete — show upgrade CTA
+    banner.style.display = 'block';
+    banner.className = 'advance-banner upgrade';
+    banner.innerHTML = '<strong>You\'ve completed both levels.</strong>Ready to go deeper? Unlimited access gives you 5 questions at a time from the full 300-question bank, with your score and response time tracked.';
+    actionsEl.innerHTML = `
+      <button class="action-btn upgrade" onclick="window.open('${BEEHIIV_URL}','_blank')">Go Unlimited — $5/year</button>
+      <button class="action-btn primary" onclick="startQuiz(2)">Retake 10-Question Quiz</button>
+      <button class="action-btn secondary" onclick="startQuiz(1)">Back to 5-Question Quiz</button>`;
+  }
+
+  // Answer review
+  const reviewItems = document.getElementById('reviewItems');
+  reviewItems.innerHTML = '';
+  answers.forEach(a => {
+    const div = document.createElement('div');
+    div.className = 'review-item';
+    if (a.correct) {
+      div.innerHTML = `
+        <div class="review-q"><span class="review-icon">&#10003;</span><span>${a.q}</span></div>
+        <div class="review-answer" style="color:#16a34a;">${a.selected}</div>`;
+    } else {
+      div.innerHTML = `
+        <div class="review-q"><span class="review-icon">&#10007;</span><span>${a.q}</span></div>
+        <div class="review-answer">
+          <div class="your-answer">Your answer: ${a.selected}</div>
+          <div class="right-answer">Correct: ${a.correctAnswer}</div>
+        </div>`;
+    }
+    reviewItems.appendChild(div);
+  });
+
+  // Save to sheet
+  document.getElementById('saveStatus').textContent = 'Saving results...';
+  const payload = {
+    score, total, grade, elapsed,
+    answers: answers.map(a => ({ selected: a.selected, correct: a.correct }))
+  };
+  fetch(SCRIPT_URL + '?data=' + encodeURIComponent(JSON.stringify(payload)))
+    .then(r => r.json())
+    .then(data => {
+      document.getElementById('saveStatus').textContent =
+        data.success ? 'Results saved.' : '';
+    })
+    .catch(() => {
+      document.getElementById('saveStatus').textContent = '';
+    });
+}
+</script>
+</body>
+</html>

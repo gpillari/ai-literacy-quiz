@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI Literacy — Unlimited Practice</title>
+<title>AI Literacy: Unlimited Practice</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -452,7 +452,7 @@
 <div class="container">
 
   <div class="header">
-    <h1>AI Literacy — Unlimited Practice</h1>
+    <h1>AI Literacy: Unlimited Practice</h1>
     <p id="headerSub">5 questions at a time &middot; Track your progress</p>
   </div>
 
@@ -463,11 +463,11 @@
       <div class="stat-label">Answered</div>
     </div>
     <div class="stat-item">
-      <div class="stat-value" id="statPct">—</div>
+      <div class="stat-value" id="statPct">--</div>
       <div class="stat-label">Correct</div>
     </div>
     <div class="stat-item">
-      <div class="stat-value" id="statAvgTime">—</div>
+      <div class="stat-value" id="statAvgTime">--</div>
       <div class="stat-label">Avg Sec/Q</div>
     </div>
   </div>
@@ -475,21 +475,21 @@
   <!-- Start screen -->
   <div id="startScreen" class="card">
     <div class="start-screen">
-      <p>Work through the full question bank 5 at a time. Your score percentage and average response time are tracked across sessions in this browser.</p>
+      <p>Become an AI expert at your own pace through the game show format. An easy way to learn! Work through hundreds of questions, with more added each week, 5 at a time. Your score percentage and average response time are tracked across sessions in this browser.</p>
 
       <div class="alltime-preview" id="alltimePreview">
         <h4>Your all-time stats</h4>
         <div class="summary-row">
           <span>Questions answered</span>
-          <span class="val" id="prevTotal">—</span>
+          <span class="val" id="prevTotal">--</span>
         </div>
         <div class="summary-row">
           <span>Overall correct</span>
-          <span class="val" id="prevPct">—</span>
+          <span class="val" id="prevPct">--</span>
         </div>
         <div class="summary-row">
           <span>Avg time per question</span>
-          <span class="val" id="prevAvg">—</span>
+          <span class="val" id="prevAvg">--</span>
         </div>
       </div>
 
@@ -614,12 +614,12 @@ function resetStats() {
 }
 
 function fmtPct(correct, total) {
-  if (!total) return '—';
+  if (!total) return '--';
   return Math.round((correct / total) * 100) + '%';
 }
 
 function fmtTime(ms, count) {
-  if (!count) return '—';
+  if (!count) return '--';
   return (ms / count / 1000).toFixed(1) + 's';
 }
 
@@ -837,7 +837,7 @@ function showFinal() {
   saveStats(prior);
 
   document.getElementById('finalSub').textContent =
-    'You answered ' + sessTotal + ' questions this session — ' + sessCorrect + ' correct.';
+    'You answered ' + sessTotal + ' questions this session, ' + sessCorrect + ' correct.';
 
   document.getElementById('finalTotalQ').textContent  = prior.total;
   document.getElementById('finalAllPct').textContent  = fmtPct(prior.correct, prior.total);

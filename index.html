@@ -421,7 +421,7 @@
 
   <div id="startScreen" class="card">
     <div class="start-screen">
-      <p>This quiz covers how AI works, where it fits into everyday decisions, and a few historical moments that explain why human judgment still matters. Questions are drawn from real events and practical situations — no jargon, no trick questions.</p>
+      <p>This quiz covers how AI works, where it fits into everyday decisions, and a few historical moments that explain why human judgment still matters. Questions are drawn from real events and practical situations. No jargon, no trick questions.</p>
       <div class="loading-msg" id="loadingMsg">Loading questions...</div>
       <div class="error-msg" id="errorMsg"></div>
       <button class="start-btn" id="startBtn" onclick="startQuiz()" disabled>Start Quiz</button>
@@ -532,7 +532,7 @@ function startQuiz(level) {
 
   // Update level badge
   const badge = document.getElementById('levelBadge');
-  badge.textContent = quizLevel === 1 ? 'Level 1 — 5 Questions' : 'Level 2 — 10 Questions';
+  badge.textContent = quizLevel === 1 ? 'Level 1: 5 Questions' : 'Level 2: 10 Questions';
   badge.className = 'level-badge ' + (quizLevel === 1 ? 'level-1' : 'level-2');
 
   // Update header
@@ -645,10 +645,10 @@ function showResults() {
     banner.style.display = 'block';
     if (passed) {
       banner.className = 'advance-banner pass';
-      banner.innerHTML = '<strong>You\'re ready for the next level!</strong>You scored ' + score + '/5 — you\'ve unlocked the 10-question quiz.';
+      banner.innerHTML = '<strong>You\'re ready for the next level!</strong>You scored ' + score + '/5 and unlocked the 10-question quiz.';
     } else {
       banner.className = 'advance-banner fail';
-      banner.innerHTML = '<strong>Not quite — need 4/5 to advance.</strong>Review the answers below and give it another try.';
+      banner.innerHTML = '<strong>Not quite. Need 4/5 to advance.</strong>Review the answers below and give it another try.';
     }
   } else {
     banner.style.display = 'none';
@@ -668,12 +668,12 @@ function showResults() {
         <button class="action-btn primary" onclick="startQuiz(1)">Try Again</button>`;
     }
   } else {
-    // Level 2 complete — show upgrade CTA
+    // Level 2 complete -- show upgrade CTA
     banner.style.display = 'block';
     banner.className = 'advance-banner upgrade';
-    banner.innerHTML = '<strong>You\'ve completed both levels.</strong>Ready to go deeper? Unlimited access gives you 5 questions at a time from the full 300-question bank, with your score and response time tracked.';
+    banner.innerHTML = '<strong>You\'ve completed both levels.</strong>Become an AI expert at your own pace through the game show format. An easy way to learn! Unlimited access gives you hundreds of questions, with more added each week, 5 at a time, with your score and response time tracked.';
     actionsEl.innerHTML = `
-      <button class="action-btn upgrade" onclick="window.open('${BEEHIIV_URL}','_blank')">Go Unlimited — $5/year</button>
+      <button class="action-btn upgrade" onclick="window.open('${BEEHIIV_URL}','_blank')">Go Unlimited for $5/year</button>
       <button class="action-btn primary" onclick="startQuiz(2)">Retake 10-Question Quiz</button>
       <button class="action-btn secondary" onclick="startQuiz(1)">Back to 5-Question Quiz</button>`;
   }

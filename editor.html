@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz Question Editor</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #f5f5f0;
+  color: #1a1a1a;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ── LOCK SCREEN ─────────────────────────────── */
+#lockScreen {
+  position: fixed; inset: 0;
+  background: #f5f5f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.lock-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 40px;
+  width: 100%;
+  max-width: 360px;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.1);
+  text-align: center;
+}
+
+.lock-card h1 { font-size: 1.3rem; font-weight: 700; margin-bottom: 6px; }
+.lock-card p  { font-size: 0.875rem; color: #666; margin-bottom: 24px; line-height: 1.5; }
+
+.lock-card input[type="password"] {
+  width: 100%;
+  padding: 12px 14px;
+  border: 2px solid #e5e5e5;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-family: inherit;
+  margin-bottom: 12px;
+  outline: none;
+  text-align: center;
+  letter-spacing: 0.1em;
+}
+
+.lock-card input:focus { border-color: #1a1a1a; }
+
+.lock-card button {
+  width: 100%;
+  padding: 12px;
+  background: #1a1a1a;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.lock-card button:hover { background: #333; }
+.lock-error { color: #dc2626; font-size: 0.82rem; margin-top: 10px; min-height: 18px; }
+
+/* ── APP SHELL ────────────────────────────────── */
+#app {
+  display: none;
+  flex-direction: column;
+  height: 100vh;
+}
+
+/* Toolbar */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  background: #1a1a1a;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.toolbar h1 { font-size: 1rem; font-weight: 700; white-space: nowrap; }
+
+.toolbar-search {
+  flex: 1;
+  max-width: 380px;
+  padding: 7px 12px;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 6px;
+  color: #fff;
+  font-size: 0.875rem;
+  font-family: inherit;
+  outline: none;
+}
+
+.toolbar-search::placeholder { color: rgba(255,255,255,0.45); }
+.toolbar-search:focus { border-color: rgba(255,255,255,0.5); }
+
+.toolbar-right { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+
+.q-count { font-size: 0.8rem; color: rgba(255,255,255,0.5); white-space: nowrap; }
+
+.tbtn {
+  padding: 7px 14px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-family: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  white-space: nowrap;
+}
+
+.tbtn.primary { background: #fff; color: #1a1a1a; }
+.tbtn.primary:hover { background: #eee; }
+.tbtn.ghost  { background: transparent; color: rgba(255,255,255,0.75); border: 1px solid rgba(255,255,255,0.25); }
+.tbtn.ghost:hover  { background: rgba(255,255,255,0.1); }
+
+/* Filter bar */
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 20px;
+  background: #fff;
+  border-bottom: 1px solid #ebebeb;
+  font-size: 0.82rem;
+  color: #666;
+  flex-shrink: 0;
+}
+
+.filter-bar select {
+  padding: 4px 8px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-family: inherit;
+  background: #fff;
+  cursor: pointer;
+}
+
+/* ── MAIN SPLIT ───────────────────────────────── */
+.main { display: flex; flex: 1; overflow: hidden; }
+
+/* Table */
+.list-panel { flex: 1; overflow-y: auto; }
+
+table { width: 100%; border-collapse: collapse; }
+
+thead th {
+  background: #fff;
+  padding: 9px 16px;
+  text-align: left;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #999;
+  border-bottom: 2px solid #f0f0f0;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+tbody tr { border-bottom: 1px solid #f0f0f0; cursor: default; }
+tbody tr:hover { background: #fafaf8; }
+tbody tr.skipped { opacity: 0.4; }
+tbody tr.is-editing { background: #fefce8 !important; }
+
+tbody td { padding: 11px 16px; vertical-align: middle; }
+
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; }
+.dot.on  { background: #22c55e; }
+.dot.off { background: #d1d5db; }
+
+.row-num { font-size: 0.78rem; color: #bbb; font-variant-numeric: tabular-nums; }
+
+.q-text { font-size: 0.875rem; line-height: 1.4; color: #1a1a1a; }
+
+.ans-badge {
+  display: inline-flex;
+  width: 22px; height: 22px;
+  background: #1a1a1a;
+  color: #fff;
+  border-radius: 50%;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.edit-btn {
+  padding: 4px 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  background: #fff;
+  font-size: 0.78rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+.edit-btn:hover { border-color: #1a1a1a; background: #1a1a1a; color: #fff; }
+
+.empty-state { text-align: center; padding: 60px 20px; color: #aaa; font-size: 0.9rem; }
+
+/* ── EDIT PANEL ───────────────────────────────── */
+.edit-panel {
+  width: 0;
+  overflow: hidden;
+  transition: width 0.2s ease;
+  background: #fff;
+  border-left: 1px solid #e5e5e5;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.edit-panel.open { width: 440px; }
+
+.panel-hdr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-bottom: 1px solid #f0f0f0;
+  flex-shrink: 0;
+}
+
+.panel-hdr h3 { font-size: 0.92rem; font-weight: 700; }
+
+.close-btn {
+  width: 26px; height: 26px;
+  border: none;
+  background: #f0f0f0;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.close-btn:hover { background: #e0e0e0; }
+
+.panel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 18px 20px;
+}
+
+/* Skip toggle */
+.skip-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: #f9f9f7;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  margin-bottom: 16px;
+  user-select: none;
+}
+
+.skip-toggle input { cursor: pointer; accent-color: #1a1a1a; }
+
+/* Form fields */
+.fgroup { margin-bottom: 14px; }
+
+.fgroup label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #999;
+  margin-bottom: 5px;
+}
+
+.fgroup textarea,
+.fgroup input[type="text"] {
+  width: 100%;
+  padding: 9px 11px;
+  border: 2px solid #e5e5e5;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-family: inherit;
+  outline: none;
+  resize: vertical;
+  transition: border-color 0.12s;
+  line-height: 1.5;
+}
+
+.fgroup textarea:focus,
+.fgroup input[type="text"]:focus { border-color: #1a1a1a; }
+
+/* Options grid */
+.opts-grid { display: flex; flex-direction: column; gap: 8px; }
+
+.opt-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.opt-letter {
+  display: inline-flex;
+  width: 26px; height: 26px;
+  background: #f0f0f0;
+  border-radius: 50%;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+
+.opt-row.correct-row .opt-letter { background: #1a1a1a; color: #fff; }
+
+.opt-row input[type="text"] {
+  flex: 1;
+  padding: 8px 10px;
+  border: 2px solid #e5e5e5;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.12s;
+}
+
+.opt-row input[type="text"]:focus { border-color: #1a1a1a; }
+.opt-row.correct-row input[type="text"] { border-color: #1a1a1a; background: #fafaf8; }
+
+.opt-hint { font-size: 0.75rem; color: #aaa; margin-top: 4px; }
+
+/* Correct answer radios */
+.correct-radios {
+  display: flex;
+  gap: 8px;
+}
+
+.correct-radios label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border: 2px solid #e5e5e5;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: all 0.12s;
+  text-transform: none;
+  letter-spacing: 0;
+  color: #1a1a1a;
+}
+
+.correct-radios label:hover { border-color: #aaa; }
+.correct-radios input[type="radio"] { display: none; }
+.correct-radios label.selected { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+
+/* Panel footer */
+.panel-ftr {
+  padding: 14px 20px;
+  border-top: 1px solid #f0f0f0;
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.panel-ftr button {
+  flex: 1;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-family: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+
+.btn-save   { background: #1a1a1a; color: #fff; border: none; }
+.btn-save:hover   { background: #333; }
+.btn-save:disabled { background: #999; cursor: default; }
+.btn-cancel { background: #fff; color: #1a1a1a; border: 2px solid #ddd; flex: 0 0 auto; padding: 10px 16px; }
+.btn-cancel:hover { border-color: #1a1a1a; }
+.btn-del    { background: #fff; color: #dc2626; border: 2px solid #fecaca; flex: 0 0 auto; padding: 10px 16px; }
+.btn-del:hover    { background: #dc2626; color: #fff; border-color: #dc2626; }
+
+/* ── TOAST ────────────────────────────────────── */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(60px);
+  background: #1a1a1a;
+  color: #fff;
+  padding: 11px 22px;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  opacity: 0;
+  transition: transform 0.2s, opacity 0.2s;
+  pointer-events: none;
+  z-index: 200;
+  white-space: nowrap;
+}
+.toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+.toast.ok  { background: #16a34a; }
+.toast.err { background: #dc2626; }
+
+/* Status row inside table */
+.status-row td { text-align: center; padding: 40px; color: #aaa; font-size: 0.875rem; }
+</style>
+</head>
+<body>
+
+<!-- ── LOCK SCREEN ─────────────────────────────── -->
+<div id="lockScreen">
+  <div class="lock-card">
+    <h1>Quiz Editor</h1>
+    <p>Enter the access code you set in the Apps Script to manage questions.</p>
+    <input type="password" id="codeInput" placeholder="Access code"
+           onkeydown="if(event.key==='Enter')unlock()">
+    <button onclick="unlock()">Enter</button>
+    <div class="lock-error" id="lockErr"></div>
+  </div>
+</div>
+
+<!-- ── APP ────────────────────────────────────── -->
+<div id="app">
+  <div class="toolbar">
+    <h1>Quiz Editor</h1>
+    <input type="text" class="toolbar-search" id="searchBox"
+           placeholder="Search questions..." oninput="render()">
+    <div class="toolbar-right">
+      <span class="q-count" id="qCount"></span>
+      <button class="tbtn ghost" onclick="loadAll()">Reload</button>
+      <button class="tbtn primary" onclick="openAdd()">+ Add Question</button>
+    </div>
+  </div>
+
+  <div class="filter-bar">
+    Show:
+    <select id="filterSel" onchange="render()">
+      <option value="all">All questions</option>
+      <option value="active">Active only</option>
+      <option value="skipped">Skipped only</option>
+    </select>
+  </div>
+
+  <div class="main">
+    <div class="list-panel">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:32px">On</th>
+            <th style="width:52px">Row</th>
+            <th>Question</th>
+            <th style="width:52px">Ans</th>
+            <th style="width:60px"></th>
+          </tr>
+        </thead>
+        <tbody id="tbody">
+          <tr class="status-row"><td colspan="5">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Edit / Add panel -->
+    <div class="edit-panel" id="editPanel">
+      <div class="panel-hdr">
+        <h3 id="panelTitle">Edit Question</h3>
+        <button class="close-btn" onclick="closePanel()">&#x2715;</button>
+      </div>
+      <div class="panel-body">
+        <label class="skip-toggle">
+          <input type="checkbox" id="fSkip">
+          Skip this question (hide from quiz)
+        </label>
+
+        <div class="fgroup">
+          <label>Question</label>
+          <textarea id="fQ" rows="3" placeholder="Enter question text..."></textarea>
+        </div>
+
+        <div class="fgroup">
+          <label>Options &mdash; click a letter to mark as correct</label>
+          <div class="opts-grid">
+            <div class="opt-row" id="row-A" onclick="setCorrect(1)">
+              <span class="opt-letter">A</span>
+              <input type="text" id="fA" placeholder="Option A" onclick="event.stopPropagation()">
+            </div>
+            <div class="opt-row" id="row-B" onclick="setCorrect(2)">
+              <span class="opt-letter">B</span>
+              <input type="text" id="fB" placeholder="Option B" onclick="event.stopPropagation()">
+            </div>
+            <div class="opt-row" id="row-C" onclick="setCorrect(3)">
+              <span class="opt-letter">C</span>
+              <input type="text" id="fC" placeholder="Option C" onclick="event.stopPropagation()">
+            </div>
+            <div class="opt-row" id="row-D" onclick="setCorrect(4)">
+              <span class="opt-letter">D</span>
+              <input type="text" id="fD" placeholder="Option D" onclick="event.stopPropagation()">
+            </div>
+          </div>
+          <div class="opt-hint">Click the A/B/C/D circle to mark the correct answer</div>
+        </div>
+
+        <div class="fgroup">
+          <label>Feedback (shown after answering)</label>
+          <textarea id="fFeedback" rows="5"
+                    placeholder="Explain why the correct answer is right..."></textarea>
+        </div>
+      </div>
+      <div class="panel-ftr">
+        <button class="btn-save" id="saveBtn" onclick="save()">Save</button>
+        <button class="btn-cancel" onclick="closePanel()">Cancel</button>
+        <button class="btn-del"  id="delBtn"  onclick="del()">Delete</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── CONFIG ─────────────────────────────────────────────────────────────────
+const SCRIPT_URL  = 'https://script.google.com/macros/s/AKfycbyFBrayBqXyBwy-k3bZuFIRtCqhcgEPwTmBn5fjvSL_DH50Q6T0633Zrqns3yCnPdctSg/exec';
+const STORE_KEY   = 'aiEditorCode';
+
+let rows = [];         // all rows from sheet
+let currentRow = null; // row being edited (null = new)
+let correctVal  = 0;   // 1–4
+let code        = '';  // access code
+
+// ── BOOT ────────────────────────────────────────────────────────────────────
+window.addEventListener('load', () => {
+  const saved = localStorage.getItem(STORE_KEY);
+  if (saved) { code = saved; boot(); }
+  else document.getElementById('codeInput').focus();
+});
+
+function unlock() {
+  const v = document.getElementById('codeInput').value.trim();
+  if (!v) return;
+  code = v;
+  localStorage.setItem(STORE_KEY, v);
+  document.getElementById('lockErr').textContent = '';
+  boot();
+}
+
+function boot() {
+  document.getElementById('lockScreen').style.display = 'none';
+  const app = document.getElementById('app');
+  app.style.display = 'flex';
+  app.style.flexDirection = 'column';
+  app.style.height = '100vh';
+  loadAll();
+}
+
+// ── LOAD ─────────────────────────────────────────────────────────────────────
+function loadAll() {
+  document.getElementById('tbody').innerHTML =
+    '<tr class="status-row"><td colspan="5">Loading...</td></tr>';
+
+  fetch(SCRIPT_URL + '?action=getAll')
+    .then(r => r.json())
+    .then(d => {
+      if (!d.success) throw new Error(d.error || 'Failed');
+      rows = d.rows;
+      render();
+    })
+    .catch(err => {
+      document.getElementById('tbody').innerHTML =
+        `<tr class="status-row"><td colspan="5">Could not load: ${esc(err.message)}<br>
+        <small>Make sure the Apps Script has been updated with the new code.</small></td></tr>`;
+      toast('Load failed: ' + err.message, 'err');
+    });
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────────────
+function render() {
+  const search = document.getElementById('searchBox').value.toLowerCase();
+  const filter = document.getElementById('filterSel').value;
+
+  const filtered = rows.filter(r => {
+    if (filter === 'active'  &&  r.skip) return false;
+    if (filter === 'skipped' && !r.skip) return false;
+    if (search) {
+      const hay = (r.question + r.optA + r.optB + r.optC + r.optD + r.feedback).toLowerCase();
+      if (!hay.includes(search)) return false;
+    }
+    return true;
+  });
+
+  document.getElementById('qCount').textContent =
+    filtered.length + ' of ' + rows.length + ' questions';
+
+  const tbody = document.getElementById('tbody');
+  if (!filtered.length) {
+    tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No questions match</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = '';
+  filtered.forEach(r => {
+    const tr = document.createElement('tr');
+    if (r.skip) tr.classList.add('skipped');
+    if (currentRow && currentRow.row === r.row) tr.classList.add('is-editing');
+
+    const letter = ['A','B','C','D'][r.correct - 1] || '?';
+    const qSnip  = r.question.length > 88
+      ? esc(r.question.substring(0, 88)) + '&hellip;'
+      : esc(r.question);
+
+    tr.innerHTML = `
+      <td><span class="dot ${r.skip ? 'off' : 'on'}"></span></td>
+      <td class="row-num">${r.row}</td>
+      <td class="q-text">${qSnip}</td>
+      <td><span class="ans-badge">${letter}</span></td>
+      <td><button class="edit-btn" onclick="editRow(${r.row})">Edit</button></td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function esc(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── EDIT ROW ──────────────────────────────────────────────────────────────────
+function editRow(rowNum) {
+  const r = rows.find(x => x.row === rowNum);
+  if (!r) return;
+  currentRow = r;
+
+  document.getElementById('panelTitle').textContent = 'Edit — Row ' + rowNum;
+  document.getElementById('fSkip').checked = !!r.skip;
+  document.getElementById('fQ').value        = r.question;
+  document.getElementById('fA').value        = r.optA;
+  document.getElementById('fB').value        = r.optB;
+  document.getElementById('fC').value        = r.optC;
+  document.getElementById('fD').value        = r.optD;
+  document.getElementById('fFeedback').value = r.feedback;
+  document.getElementById('delBtn').style.display = '';
+
+  setCorrect(r.correct);
+  openPanel();
+  render();
+}
+
+// ── ADD NEW ───────────────────────────────────────────────────────────────────
+function openAdd() {
+  currentRow = null;
+  document.getElementById('panelTitle').textContent = 'New Question';
+  document.getElementById('fSkip').checked   = false;
+  document.getElementById('fQ').value        = '';
+  document.getElementById('fA').value        = '';
+  document.getElementById('fB').value        = '';
+  document.getElementById('fC').value        = '';
+  document.getElementById('fD').value        = '';
+  document.getElementById('fFeedback').value = '';
+  document.getElementById('delBtn').style.display = 'none';
+
+  setCorrect(0);
+  openPanel();
+  document.getElementById('fQ').focus();
+}
+
+// ── CORRECT ANSWER ────────────────────────────────────────────────────────────
+function setCorrect(n) {
+  correctVal = n;
+  ['A','B','C','D'].forEach((l, i) => {
+    const row = document.getElementById('row-' + l);
+    if (row) row.classList.toggle('correct-row', i + 1 === n);
+  });
+}
+
+// ── PANEL ─────────────────────────────────────────────────────────────────────
+function openPanel()  { document.getElementById('editPanel').classList.add('open'); }
+function closePanel() {
+  document.getElementById('editPanel').classList.remove('open');
+  currentRow = null;
+  render();
+}
+
+// ── SAVE ──────────────────────────────────────────────────────────────────────
+function save() {
+  const q   = document.getElementById('fQ').value.trim();
+  const a   = document.getElementById('fA').value.trim();
+  const b   = document.getElementById('fB').value.trim();
+  const c   = document.getElementById('fC').value.trim();
+  const d   = document.getElementById('fD').value.trim();
+  const fb  = document.getElementById('fFeedback').value.trim();
+
+  if (!q)              { toast('Question text is required', 'err'); return; }
+  if (!a||!b||!c||!d) { toast('All four options are required', 'err'); return; }
+  if (!correctVal)     { toast('Click a letter to mark the correct answer', 'err'); return; }
+  if (!fb)             { toast('Feedback is required', 'err'); return; }
+
+  const payload = {
+    password : code,
+    action   : currentRow ? 'update' : 'add',
+    data     : {
+      skip    : document.getElementById('fSkip').checked ? 1 : 0,
+      question: q,
+      optA    : a, optB: b, optC: c, optD: d,
+      correct : correctVal,
+      feedback: fb
+    }
+  };
+  if (currentRow) payload.row = currentRow.row;
+
+  const btn = document.getElementById('saveBtn');
+  btn.textContent = 'Saving...';
+  btn.disabled = true;
+
+  post(payload)
+    .then(res => {
+      btn.textContent = 'Save';
+      btn.disabled = false;
+      if (res.success) {
+        toast(currentRow ? 'Saved' : 'Question added', 'ok');
+        closePanel();
+        loadAll();
+      } else {
+        if (res.error === 'Access denied') {
+          toast('Wrong access code', 'err');
+          localStorage.removeItem(STORE_KEY);
+        } else {
+          toast('Error: ' + (res.error || 'Save failed'), 'err');
+        }
+      }
+    })
+    .catch(err => {
+      btn.textContent = 'Save';
+      btn.disabled = false;
+      toast('Network error: ' + err.message, 'err');
+    });
+}
+
+// ── DELETE ────────────────────────────────────────────────────────────────────
+function del() {
+  if (!currentRow) return;
+  if (!confirm('Delete row ' + currentRow.row + '? This cannot be undone.')) return;
+
+  post({ password: code, action: 'delete', row: currentRow.row })
+    .then(res => {
+      if (res.success) {
+        toast('Deleted', 'ok');
+        closePanel();
+        loadAll();
+      } else {
+        toast('Error: ' + (res.error || 'Delete failed'), 'err');
+      }
+    })
+    .catch(err => toast('Network error: ' + err.message, 'err'));
+}
+
+// ── HTTP ──────────────────────────────────────────────────────────────────────
+function post(payload) {
+  return fetch(SCRIPT_URL, {
+    method  : 'POST',
+    redirect: 'follow',
+    body    : JSON.stringify(payload)
+  }).then(r => r.json());
+}
+
+// ── TOAST ─────────────────────────────────────────────────────────────────────
+let toastT;
+function toast(msg, type) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show' + (type ? ' ' + type : '');
+  clearTimeout(toastT);
+  toastT = setTimeout(() => { el.className = 'toast'; }, 3500);
+}
+</script>
+</body>
+</html>

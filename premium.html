@@ -658,7 +658,7 @@ let sessTimeMs       = 0;
     .then(data => {
       if (data.success && data.questions && data.questions.length >= ROUND_SIZE) {
         QUESTION_BANK = data.questions;
-        loadingEl.textContent = QUESTION_BANK.length + ' questions loaded.';
+        loadingEl.textContent = 'Selecting from ' + QUESTION_BANK.length + ' questions';
         startBtn.disabled = false;
       } else {
         throw new Error(data.error || 'No questions available.');
